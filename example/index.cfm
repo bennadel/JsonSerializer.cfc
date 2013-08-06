@@ -11,13 +11,14 @@
 		.asString( "nickName" )
 	;
 
+	// Image that these keys are all upper-case because they came out of a database.
 	tricia = {
-		firstName = "Tricia",
-		lastName = "Smith",
-		dateOfBirth = "1975/01/01",
-		nickName = "Trish",
-		favoriteColor = "333333",
-		age = 38
+		FIRSTNAME = "Tricia",
+		LASTNAME = "Smith",
+		DATEOFBIRTH = "1975/01/01",
+		NICKNAME = "Trish",
+		FAVORITECOLOR = "333333",
+		AGE = 38
 	};
 
 	writeOutput(
