@@ -9,6 +9,10 @@ component
 	// I return the initialized component.
 	public any function init( boolean convertDateToUtcMilliseconds = true ) {
 
+		// By default, we're going to convert defined date-types as UTC milliseconds. If this flag
+		// is set to false, then dates will be converted using normal stringification.
+		variables.convertDateToUtcMilliseconds = arguments.convertDateToUtcMilliseconds;
+
 		// Every key is added to the full key list.
 		fullKeyList = {};
 
@@ -150,6 +154,18 @@ component
 	}
 
 
+	// I return the ISO 8601 time string for the given date. This function assumes that the
+	// date is already in the desired timezone. 
+	private string function getIsoTimeString(  required date input ) {
+
+		return(
+			dateFormat( input, "yyyy-mm-dd" ) & "T" &
+			timeFormat( input, "HH:mm:ss.l" ) & "Z"
+		);
+
+	}
+
+
 	// I prepare the given array for serialization. Since the array doesn't have keys, this 
 	// function will simply walk the array and prepare each value contained within the array.
 	private array function prepareArrayForSerialization( required array input ) {
@@ -254,11 +270,26 @@ component
 			isNumericDate( value )
 			) {
 
-			var preparedValue = javaCast( 
-				"long",
-				dateConvert( "utc2local", value ).getTime()
-			);
+			if ( convertDateToUtcMilliseconds ) {
 
+				var preparedValue = javaCast( 
+					"long",
+					dateConvert( "utc2local", value ).getTime()
+				);
+
+			} else {
+
+				var preparedValue = getIsoTimeString( value );
+
+			}
+
+		} else if ( 
+			isSimpleValue( value ) &&
+			( value.getClass().getName() == "coldfusion.runtime.OleDateTime" ) 
+			) {
+
+			var preparedValue = getIsoTimeString( value );
+			
 		} else if ( isSimpleValue( value ) ) {
 
 			// Prepend the string-value with the start-of-string marker so that ColdFusion won't 
