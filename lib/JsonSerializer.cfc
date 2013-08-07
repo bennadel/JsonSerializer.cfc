@@ -97,6 +97,16 @@ component
 	}
 
 
+	// I define the key as one that should not be included in the serialized response.
+	public any function exclude( required string key ) {
+
+		blockedKeyList[ key ] = true;
+
+		return( this );
+
+	}
+
+
 	// I serialize the given input as JavaScript Object Notation (JSON) using the case-sensitive
 	// values defined in the key-list.
 	public string function serialize( required any input ) {

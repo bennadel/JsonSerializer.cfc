@@ -18,6 +18,7 @@ component
 			.asString( "hex" )
 			.asInteger( "id" )
 			.asString( "lastName" )
+			.exclude( "password" )
 			.asFloat( "rating" )
 		;
 
@@ -26,7 +27,8 @@ component
 			lastName = "Smith",
 			age = 33,
 			dateOfBirth = "1980/01/01",
-			nickName = "Trish"
+			nickName = "Trish",
+			password = "I<3ColdFusion"
 		};
 
 		movies = queryNew( "" );
@@ -248,6 +250,9 @@ component
 		assert( find( quote( "Smith" ), serializedInput ) );
 		assert( find( ":33", serializedInput ) );
 		assert( find( quote( "1980-01-01T00:00:00.0Z" ), serializedInput ) );
+
+		// Test excluded values.
+		assert( ! findNoCase( quote( "password" ), serializedInput ) );
 
 	}
 
