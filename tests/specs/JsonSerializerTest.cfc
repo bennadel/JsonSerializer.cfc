@@ -243,13 +243,11 @@ component
 		assert( find( quote( "dateOfBirth" ), serializedInput ) );
 		assert( find( quote( "nickname" ), serializedInput ) );
 
-		var utcMilliseconds = dateConvert( "utc2local", user.dateOfBirth ).getTime();
-
 		// Test the values.
 		assert( find( quote( "Tricia" ), serializedInput ) );
 		assert( find( quote( "Smith" ), serializedInput ) );
 		assert( find( ":33", serializedInput ) );
-		assert( find( ":#utcMilliseconds#", serializedInput ) );
+		assert( find( quote( "1980-01-01T00:00:00.0Z" ), serializedInput ) );
 
 	}
 

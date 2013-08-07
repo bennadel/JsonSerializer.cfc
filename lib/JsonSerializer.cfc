@@ -7,11 +7,7 @@ component
 
 
 	// I return the initialized component.
-	public any function init( boolean convertDateToUtcMilliseconds = true ) {
-
-		// By default, we're going to convert defined date-types as UTC milliseconds. If this flag
-		// is set to false, then dates will be converted using normal stringification.
-		variables.convertDateToUtcMilliseconds = arguments.convertDateToUtcMilliseconds;
+	public any function init() {
 
 		// Every key is added to the full key list.
 		fullKeyList = {};
@@ -270,26 +266,8 @@ component
 			isNumericDate( value )
 			) {
 
-			if ( convertDateToUtcMilliseconds ) {
-
-				var preparedValue = javaCast( 
-					"long",
-					dateConvert( "utc2local", value ).getTime()
-				);
-
-			} else {
-
-				var preparedValue = getIsoTimeString( value );
-
-			}
-
-		} else if ( 
-			isSimpleValue( value ) &&
-			( value.getClass().getName() == "coldfusion.runtime.OleDateTime" ) 
-			) {
-
 			var preparedValue = getIsoTimeString( value );
-			
+
 		} else if ( isSimpleValue( value ) ) {
 
 			// Prepend the string-value with the start-of-string marker so that ColdFusion won't 
