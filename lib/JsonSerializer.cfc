@@ -174,7 +174,10 @@ component
 
 	// I prepare the given array for serialization. Since the array doesn't have keys, this 
 	// function will simply walk the array and prepare each value contained within the array.
-	private array function prepareArrayForSerialization( required array input ) {
+	private array function prepareArrayForSerialization( 
+		required array input,
+		required string closestKey
+		) {
 
 		var preparedInput = [];
 
@@ -182,7 +185,7 @@ component
 
 			arrayAppend(
 				preparedInput,
-				prepareInputForSerialization( value )
+				prepareInputForSerialization( value, closestKey )
 			);
 
 		}
@@ -193,25 +196,36 @@ component
 
 
 	// I prepare the input for case/value-sensitive serialization.
-	private any function prepareInputForSerialization( required any input ) {
+	private any function prepareInputForSerialization( 
+		required any input,
+		string closestKey = ""
+		) {
 
 		// Convert the response based on its type.
 		if ( isArray( input ) ) {
 
 			return(
-				prepareArrayForSerialization( input )
+				prepareArrayForSerialization( input, closestKey )
 			);
 
 		} else if ( isStruct( input ) ) {
 
+			// NOTE: No need to pass-in the closestKey since struct will provide its own keys.
 			return( 
 				prepareStructForSerialization( input )
 			);
 
 		} else if ( isQuery( input ) ) {
 
+			// NOTE: No need to pass-in the closestKey since query will provide its own keys.
 			return(
 				prepareQueryForSerialization( input )
+			);
+
+		} else if ( isSimpleValue( input ) ) {
+
+			return(
+				prepareSimpleValueForSerialization( input, closestKey )
 			);
 
 		}
@@ -224,76 +238,19 @@ component
 	}
 
 
-	// I prepare the key-value pair for use in the prepared input. I will attempt to convert the
-	// value into the serialization-specific data type before adding it to the input.
-	private struct function prepareKeyValuePairForSerialization(
-		required struct preparedInput,
-		required string key,
-		required any value
-		) {
+	// Return the key with the appropriate casing (or all lowercase if no case has been provided).
+	private string function prepareKeyForSerialization( required string key ) {
 
-		// If this key has been blocked, just return the unaltered input.
-		if ( structKeyExists( blockedKeyList, key ) ) {
+		if ( structKeyExists( fullKeyList, key ) ) {
 
-			return( preparedInput );
-
-		}
-
-		// Now that we know this key isn't blocked, get the case-sensitive version of it as
-		// defined in our key list. If the key has not been defined, we'll use lowercase as
-		// the default formatting. 
-		var preparedKey = ( 
-			structKeyExists( fullKeyList, key ) 
-				? fullKeyList[ key ] 
-				: lcase( key )
-		);
-
-		// Check to see if the key was defined in a data-type-specific list. If so, we'll try to
-		// convert the value as we copy it over into the prepared input.
-		if (
-			structKeyExists( integerKeyList, key ) &&
-			isNumeric( value )
-			) {
-
-			var preparedValue = javaCast( "long", value );
-
-		} else if (
-			structKeyExists( floatKeyList, key ) &&
-			isValid( "float", value )
-			) {
-
-			var preparedValue = javaCast( "float", value );
-
-		} else if (
-			structKeyExists( booleanKeyList, key ) &&
-			isBoolean( value )
-			) {
-
-			var preparedValue = javaCast( "boolean", value );
-
-		} else if (
-			structKeyExists( dateKeyList, key ) &&
-			isNumericDate( value )
-			) {
-
-			var preparedValue = getIsoTimeString( value );
-
-		} else if ( isSimpleValue( value ) ) {
-
-			// Prepend the string-value with the start-of-string marker so that ColdFusion won't 
-			// be tempted to serialize the string value as a number.
-			var preparedValue = ( START_OF_STRING & value );
+			return( fullKeyList[ key ] );
 
 		} else {
 
-			var preparedValue = prepareInputForSerialization( value );
+			return( lcase( key ) );
+
 
 		}
-
-		// Add the prepared key/value pair into the prepared input.
-		preparedInput[ preparedKey ] = preparedValue;
-
-		return( preparedInput );
 
 	}
 
@@ -328,11 +285,17 @@ component
 
 		for ( var key in listToArray( input.columnList ) ) {
 
-			prepareKeyValuePairForSerialization(
-				preparedInput,
-				key,
-				input[ key ][ rowIndex ]
-			);
+			// If this key is black-listed, skip it.
+			if ( structKeyExists( blockedKeyList, key ) ) {
+
+				continue;
+
+			}
+
+			// Get the appropriate casing for the key.
+			var preparedKey = prepareKeyForSerialization( key ); 
+				
+			preparedInput[ preparedKey ] = prepareInputForSerialization( input[ key ][ rowIndex ], key );
 
 		}
 
@@ -348,15 +311,77 @@ component
 
 		for ( var key in input ) {
 
-			prepareKeyValuePairForSerialization(
-				preparedInput, 
-				key,
-				input[ key ]
-			);
+			// If this key is black-listed, skip it.
+			if ( structKeyExists( blockedKeyList, key ) ) {
+
+				continue;
+
+			}
+
+			// Get the appropriate casing for the key.
+			var preparedKey = prepareKeyForSerialization( key ); 
+
+			preparedInput[ preparedKey ] = prepareInputForSerialization( input[ key ], key );
 
 		}
 
 		return( preparedInput );
+
+	}
+
+
+	// I prepare the given simple value for serialization by converting (or attempting to convert
+	// it) into the data type defined by the closest key in the contextual data structure.
+	private any function prepareSimpleValueForSerialization(
+		required any value,
+		required string closestKey
+		) {
+
+		// If we don't have any known container key, then we have no extra insight into how to 
+		// serialize this value. As such, force it to be a string.
+		if ( closestKey == "" ) {
+
+			return( START_OF_STRING & value );
+
+		}
+
+		// Check to see if the key was defined in a data-type-specific list. If so, we'll try to
+		// convert the value as we copy it over into the prepared input.
+		if (
+			structKeyExists( integerKeyList, closestKey ) &&
+			( isNumeric( value ) || isBoolean( value ) )
+			) {
+
+			return( javaCast( "long", value ) );
+
+		} else if (
+			structKeyExists( floatKeyList, closestKey ) &&
+			( isNumeric( value ) || isBoolean( value ) )
+			) {
+
+			return( javaCast( "float", value ) );
+
+		} else if (
+			structKeyExists( booleanKeyList, closestKey ) &&
+			isBoolean( value )
+			) {
+
+			return( javaCast( "boolean", value ) );
+
+		} else if (
+			structKeyExists( dateKeyList, closestKey ) &&
+			isNumericDate( value )
+			) {
+
+			return( getIsoTimeString( value ) );
+
+		} else {
+
+			// Prepend the string-value with the start-of-string marker so that ColdFusion won't 
+			// be tempted to serialize the string value as a number.
+			return( START_OF_STRING & value );
+
+		}
 
 	}
 
