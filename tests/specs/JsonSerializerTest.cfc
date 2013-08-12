@@ -19,6 +19,7 @@ component
 			.asInteger( "id" )
 			.asString( "lastName" )
 			.exclude( "password" )
+			.asBoolean( "quizAnswers" )
 			.asFloat( "rating" )
 		;
 
@@ -68,6 +69,10 @@ component
 		];
 
 		user.favoriteColors = colors;
+
+		quizAnswers = [ 1, 1, 0, 1 ];
+
+		user.quizAnswers = quizAnswers;
 
 	}
 
@@ -152,6 +157,7 @@ component
 		assertUserValues( serializedInput );
 		assertMovieValues( serializedInput );
 		assertColorValues( serializedInput );
+		assertQuizAnswerValues( serializedInput );
 
 	}
 
@@ -165,6 +171,7 @@ component
 		assertUserValues( serializedInput );
 		assertMovieValues( serializedInput );
 		assertColorValues( serializedInput );
+		assertQuizAnswerValues( serializedInput );
 
 	}
 
@@ -233,6 +240,14 @@ component
 		assert( find( ":4.5", serializedInput ) );
 		assert( find( ":108", serializedInput ) );
 
+	}
+
+
+	public void function assertQuizAnswerValues( required string serializedInput ) {
+
+		// Test the values.
+		assert( find( "true,true,false,true", serializedInput ) );
+		
 	}
 
 

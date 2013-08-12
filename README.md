@@ -33,5 +33,12 @@ given the explicitly defined casing. So, if you want to use "id" in one place
 and "ID" in another place within the same data-structure, you're out of luck.
 Both keys will match "id" and will be given the same case.
 
+## API Philosophy
+
+This is primarily intended to be used to return data from a server-side API. As
+part of that use-case, some of my philosophy is baked into it. Namely, an API
+usually returns a top-level struct / hash-map that defines the API result. This
+is why the serialization process is driven by the name of keys.
+
 
 [1]: http://www.bennadel.com

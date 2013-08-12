@@ -8,6 +8,7 @@
 		.asAny( "createdAt" )
 		.asDate( "dateOfBirth" )
 		.asString( "favoriteColor" )
+		.asInteger( "favoriteNumbers" )
 		.asString( "firstName" )
 		.asString( "lastName" )
 		.asString( "nickName" )
@@ -23,6 +24,7 @@
 		DATEOFBIRTH = dateConvert( "local2utc", "1975/01/01" ),
 		NICKNAME = "Trish",
 		FAVORITECOLOR = "333333",
+		FAVORITENUMBERS = [ true, 4.0, 137, false ],
 		AGE = 38,
 		CREATEDAT = now(),
 		PASSWORD = "I<3ColdFusion&Cookies"
