@@ -93,8 +93,12 @@ component
 	}
 
 
-	// I serialize the given input as JavaScript Object Notation (JSON) using the case-sensitive
-	// values defined in the key-list.
+	/**
+	* I serialize the given input as JavaScript Object Notation (JSON) using the case-sensitive
+	* values defined in the key-list.
+	* 
+	* @output false
+	*/
 	public string function serialize( required any input ) {
 
 		// Write the serialized value to the output buffer.
