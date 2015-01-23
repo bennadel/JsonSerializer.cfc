@@ -140,7 +140,11 @@ component
 
 		// Add all keys to the full key list as well. This one is used to store the serialzation
 		// of the key so that it doesn't have to be recalculated each time the object is serialized.
-		fullKeyList[ key ] = serializeJson( key );
+		if (isNumeric(key)) {
+			fullKeyList[ key ] = """" & key & """";
+		} else {
+			fullKeyList[ key ] = serializeJson( key );
+		}
 
 		// If we have a specific type, then add the hint to the full hint list as well. This will 
 		// allow us to quickly look up the pass-through data type hint during serialization.
