@@ -1,6 +1,6 @@
 component
 	output = false
-	hint = "I provide a way to serialize complext ColdFusion data values as case-sensitive JavaScript Object Notation (JSON) strings."
+	hint = "I provide a way to serialize complex ColdFusion data values as case-sensitive JavaScript Object Notation (JSON) strings."
 	{
 
 	// I return the initialized component.
@@ -35,7 +35,7 @@ component
 
 
 	// I define the given key without a type. This is here to provide key-casing without caring 
-	// about why type of data convertion takes place. Returns serializer.
+	// about why type of data conversion takes place. Returns serializer.
 	public any function asAny( required string key ) {
 
 		return( defineKey( fullKeyList, key, "any" ) );
@@ -118,7 +118,7 @@ component
 	// ---
 
 
-	// I define the given key withihn the given key list.
+	// I define the given key within the given key list.
 	private any function defineKey(
 		required struct keyList,
 		required string key,
@@ -138,9 +138,9 @@ component
 		// Add to the appropriate data-type lists. This one is used for existence checking.
 		keyList[ key ] = key;
 
-		// Add all keys to the full key list as well. This one is used to store the serialzation
+		// Add all keys to the full key list as well. This one is used to store the serialization
 		// of the key so that it doesn't have to be recalculated each time the object is serialized.
-		fullKeyList[ key ] = serializeJson( key );
+		fullKeyList[ key ] = serializeString( key );
 
 		// If we have a specific type, then add the hint to the full hint list as well. This will 
 		// allow us to quickly look up the pass-through data type hint during serialization.
@@ -166,7 +166,7 @@ component
 	// NOTE: THIS METHOD IS HUGE - this is on purpose. Since serialization is a rather intense 
 	// process, I am trying to cut out as much overhead as possible. In this case, we're cutting 
 	// out extra stack space by inlining and duplicating a lot of functionality. This is being done 
-	// at the COST of clarity and non-repetative code.
+	// at the COST of clarity and non-repetitive code.
 	private void function serializeInput(
 		required any input,
 		required string hint
@@ -187,7 +187,7 @@ component
 
 				} else {
 
-					writeOutput( serializeJson( input ) );
+					serializeInputString( input );
 
 				}
 
@@ -206,12 +206,12 @@ component
 			} else if ( ( hint == "date" ) && ( isDate( input ) || isNumericDate( input ) ) ) {
 
 				// Write the date in ISO 8601 time string format. We're going to assume that the 
-				// date is already in the dezired timezone. 
+				// date is already in the desired timezone. 
 				writeOutput( """" & dateFormat( input, "yyyy-mm-dd" ) & "T" & timeFormat( input, "HH:mm:ss.l" ) & "Z""" );
 
 			} else {
 
-				writeOutput( serializeJson( input ) );
+				serializeInputString( input );
 
 			}
 
@@ -264,7 +264,7 @@ component
 					serializeInput( input[ key ], fullHintList[ key ] );
 
 				// If the given key is unknown, just pass through the most recent hint as 
-				// it may be defining the type for an entire sturcture.
+				// it may be defining the type for an entire structure.
 				} else {
 
 					serializeInput( input[ key ], hint );
@@ -371,7 +371,7 @@ component
 						serializeInput( input[ key ][ i ], fullHintList[ key ] );
 
 					// If the given key is unknown, just pass through the most recent hint as 
-					// it may be defining the type for an entire sturcture.
+					// it may be defining the type for an entire structure.
 					} else {
 
 						serializeInput( input[ key ][ i ], hint );
@@ -394,6 +394,117 @@ component
 		// If we made it this far, we were given a data type that we're not actively supporting.
 		// As such, we just have to hand this off to the native serializer.
 		writeOutput( serializeJson( input ) );
+
+	}
+
+
+	/**
+	* I serialize and write the given string to the current output context, escaping all appropriate
+	* characters for the JSON specification.
+	* 
+	* NOTE: We are using this manual-encoding process rather than the built-in serializeJson() function
+	* as there is a rather nasty bug that corrupts certain patterns in the output. Read more:
+	* 
+	* http://www.bennadel.com/blog/2842-serializejson-and-the-input-and-output-encodings-are-not-same-errors-in-coldfusion.htm
+	* 
+	* @input I am the string being serialized.
+	*/
+	private void function serializeInputString( required string input ) {
+
+		// While this may not be technically needed, this will ensure that we are not using any 
+		// "undocumented features" of the language. If we explicitly cast to  a Java string, and
+		// something goes wrong due to odd type-casting, it's a ColdFusion bug, at that point, not 
+		// a logic error ;)
+		input = javaCast( "string", input );
+
+		var length = input.length();
+
+		writeOutput( """" );
+
+		for ( var i = 1 ; i <= length ; i++ ) {
+
+			var charCode = input.codePointAt( javaCast( "int", i - 1 ) );
+
+			// Check for the most common case first (normal characters).
+			if ( 
+				( charCode >= 32 ) &&
+				( charCode != 34 ) &&
+				( charCode != 47 ) &&
+				( charCode != 92 ) &&
+				( charCode != 8232 ) &&
+				( charCode != 8233 )
+				) {
+
+				writeOutput( chr( charCode ) );
+
+			// Check for the special cases next (control characters, characters that
+			// need to be escaped, and characters that need to be encoded nicely).
+			} else if ( charCode == 8 ) {
+
+				writeOutput( "\b" );
+				
+			} else if ( charCode == 9 ) {
+
+				writeOutput( "\t" );
+
+			} else if ( charCode == 10 ) {
+
+				writeOutput( "\n" );
+
+			} else if ( charCode == 12 ) {
+
+				writeOutput( "\f" );
+
+			} else if ( charCode == 13 ) {
+
+				writeOutput( "\r" );
+
+			} else if ( 
+				( charCode < 32 ) ||
+				( charCode == 8232 ) ||
+				( charCode == 8233 )
+				) {
+
+				// For Unicode hex values, we need to enforce a 4-digit code.
+				writeOutput( "\u" & right( ( "000" & formatBaseN( charCode, 16 ) ), 4 ) );
+
+			} else if ( charCode == 34 ) {
+
+				writeOutput( "\""" );
+
+			} else if ( charCode == 47 ) {
+
+				writeOutput( "\/" );
+
+			} else if ( charCode == 92 ) {
+
+				writeOutput( "\\" );
+
+			}
+
+		}
+
+		writeOutput( """" );
+
+	}
+
+
+	/**
+	* I serialize and return the given string, escaping all appropriate characters for the 
+	* JSON specification.
+	* 
+	* @input I am the string being serialized.
+	* @output false
+	*/
+	private string function serializeString( required string input ) {
+
+		savecontent variable = "local.json" {
+
+			serializeInputString( input );
+
+		}
+
+		return( json );
 
 	}
 
