@@ -58,6 +58,12 @@ component
 
 	}
 
+	// I define the given key as a date in milliseconds since Unix epoch. Returns serializer.
+	public any function asEpochMillis( required string key ) {
+
+		return( defineKey( dateKeyList, key, "epochMillis" ) );
+
+	}
 
 	// I define the given key as a float / decimal. Returns serializer.
 	public any function asFloat( required string key ) {
@@ -208,6 +214,22 @@ component
 				// Write the date in ISO 8601 time string format. We're going to assume that the 
 				// date is already in the desired timezone. 
 				writeOutput( """" & dateFormat( input, "yyyy-mm-dd" ) & "T" & timeFormat( input, "HH:mm:ss.l" ) & "Z""" );
+
+			} else if ( hint == "epochMillis" ) {
+
+				if ( isDate( input ) ) {
+
+					writeOutput( input.getTime() );
+
+				} else if ( isNumericDate( input ) ) {
+
+					writeOutput( createObject( "java", "java.util.Date" ).setTime( input ).getTime() );
+
+				} else {
+
+					serializeInputString( input );
+
+				}
 
 			} else {
 
