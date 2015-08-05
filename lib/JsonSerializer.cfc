@@ -181,7 +181,7 @@ component
 
 				// If the string appears to be numeric, then we have to prefix it to make sure 
 				// ColdFusion doesn't accidentally convert it to a number.
-				if ( isNumeric( input ) ) {
+				if ( isNumeric( input ) || isBoolean( input ) ) {
 
 					writeOutput( """" & input & """" );
 
