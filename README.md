@@ -4,7 +4,7 @@
 by [Ben Nadel][1]
 
 ColdFusion is a case insensitive language. However, it often has to communicate
-with languages, like JavaScript, that are not case sensitive. During the data
+with languages, like JavaScript, which are case sensitive. During the data
 serialization workflow, this mismatch of casing can cause a lot of headaches, 
 especially when ColdFusion is your API-back-end to a rich-client JavaScript 
 front-end application. 
